@@ -1,3 +1,4 @@
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -173,6 +174,58 @@ class ProductDataAgentImpl extends ProductDataAgent{
          );
        }
 
+    }catch(e){
+      throw Exception(e.toString());
+    }
+  }
+  /// add to whist list
+  @override
+  Future<void> addToFavourites(ProductVO product) async{
+    try {
+      String uid = _auth.currentUser!.uid;
+      DocumentReference userDoc = _firebaseFirestore.collection('users').doc(uid);
+      await userDoc.collection('whist_lists').doc(product.productId).set(product.toJson());
+      Fluttertoast.showToast(msg: 'Added to WhistList successfully!');
+    } catch (e) {
+     throw Exception(e.toString());
+    }
+  }
+
+  @override
+  Stream<List<ProductVO>?> fetchWhistList(){
+    try{
+      var currentUserId = _auth.currentUser!.uid;
+      return _firebaseFirestore.collection('users')
+          .doc(currentUserId)
+          .collection('whist_lists')
+          .snapshots()
+          .map((event) => event.docs.map((e) => ProductVO.fromJson(e.data())).toList());
+    }catch(e){
+      throw Exception(e.toString());
+    }
+  }
+
+  @override
+  Future<bool> isFavourite(String productId)async {
+    var currentUserId = _auth.currentUser!.uid;
+    final doc = await _firebaseFirestore
+        .collection('users')
+        .doc(currentUserId)
+        .collection('whist_lists')
+        .doc(productId)
+        .get();
+    return doc.exists;
+  }
+
+  @override
+  Future<void> removeFromWhistList(String productId)async {
+    try{
+      var currentUserId = _auth.currentUser!.uid;
+      await _firebaseFirestore.collection('users')
+      .doc(currentUserId)
+      .collection('whist_lists')
+      .doc(productId)
+      .delete();
     }catch(e){
       throw Exception(e.toString());
     }

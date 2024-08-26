@@ -1,6 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:pharmacy_store/provider/whist_list_provider.dart';
 import 'package:pharmacy_store/screens/product_detail_screen.dart';
 import 'package:pharmacy_store/utils/helper_functions/helper_functions.dart';
 import 'package:pharmacy_store/utils/shimmers/horizontal_product_shimmer.dart';
@@ -15,12 +17,21 @@ class AllProductWidget extends StatelessWidget{
   @override
   Widget build(BuildContext context) {
     return Selector<HomeScreenProvider,List<ProductVO>?>(builder: (_,allProducts,__){
+      final favProvider = context.watch<WhistListProvider>();
       return SizedBox(height: 240,
         child: ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: allProducts?.length,
             itemBuilder: (_,index){
+              bool isInWishlist = favProvider.whistList.any(
+                    (product) => product.productId == allProducts?[index].productId,
+              );
               return PromotionCardItemView(
+                onTapFav: ()async{
+                  bool isWhistList = await favProvider.isWhistList(allProducts?[index].productId ?? '');
+                  isWhistList?favProvider.removeFromWhistList(allProducts?[index].productId ?? ''):favProvider.addToWhistList(allProducts?[index] ?? ProductVO());
+                },
+                isWhistList: isInWishlist,
                 onTap: (){
                   navigateToScreen( ProductDetailScreen(productId: '${allProducts?[index].productId}'), context);
                 },
@@ -38,6 +49,7 @@ class PromotionProducts extends StatelessWidget{
 
   @override
   Widget build(BuildContext context) {
+    final favProvider = context.watch<WhistListProvider>();
     return Selector<HomeScreenProvider,List<ProductVO>?>(builder: (_,promotionProducts,__){
       if(promotionProducts == null || promotionProducts.isEmpty){
         return HorizontalProductShimmer(itemCount: promotionProducts?.length ?? 10);
@@ -47,7 +59,15 @@ class PromotionProducts extends StatelessWidget{
               scrollDirection: Axis.horizontal,
               itemCount: promotionProducts.length,
               itemBuilder: (_,index){
+                bool isInWishlist = favProvider.whistList.any(
+                      (product) => product.productId == promotionProducts[index].productId,
+                );
                 return PromotionCardItemView(
+                  isWhistList: isInWishlist,
+                  onTapFav: ()async{
+                    bool isWhistList = await favProvider.isWhistList(promotionProducts[index].productId ?? '');
+                    isWhistList?favProvider.removeFromWhistList(promotionProducts[index].productId ?? ''):favProvider.addToWhistList(promotionProducts[index]);
+                  },
                   onTap: (){
                     navigateToScreen(ProductDetailScreen(productId: '${promotionProducts[index].productId}',), context);
                   },
@@ -72,7 +92,7 @@ class PromotionCardItemView extends StatelessWidget {
     required this.title,
     required this.image,
     required this.percentage,
-    required this.price, required this.isDiscount, this.discountPrice, this.onTap,
+    required this.price, required this.isDiscount, this.discountPrice, this.onTap, this.onTapFav, required this.isWhistList,
   });
   final String title;
   final String image;
@@ -80,7 +100,9 @@ class PromotionCardItemView extends StatelessWidget {
   final String price;
   final String? discountPrice;
   final bool isDiscount;
+  final bool isWhistList;
   final GestureTapCallback? onTap;
+  final GestureTapCallback? onTapFav;
 
   @override
   Widget build(BuildContext context) {
@@ -104,15 +126,15 @@ class PromotionCardItemView extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  GestureDetector(
-                    onTap: onTap,
-                    child: Container(
-                      width: 150,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(5),
-                        color: Colors.grey.withOpacity(0.1),
-                      ),
+                  Container(
+                    width: 150,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(5),
+                      color: Colors.grey.withOpacity(0.1),
+                    ),
+                    child: GestureDetector(
+                      onTap: onTap,
                       child: CachedNetworkImage(
                         imageUrl: image,
                       ),
@@ -151,10 +173,12 @@ class PromotionCardItemView extends StatelessWidget {
               ),
             ),
           ),
-          const Positioned(
+          Positioned(
             top: 10,
             right: 10,
-            child: Icon(Iconsax.heart),
+            child: GestureDetector(
+               onTap: onTapFav,
+                child: CircleAvatar(child: Icon(Iconsax.heart,color: isWhistList?Colors.red:Colors.black,))),
           ),
           Visibility(
             visible: isDiscount,

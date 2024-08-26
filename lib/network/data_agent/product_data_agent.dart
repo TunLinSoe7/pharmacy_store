@@ -9,4 +9,10 @@ abstract class ProductDataAgent{
   Stream<List<CartVO>?> fetchCartProductList();
   Future<void> increaseProductQuantity(CartVO cartVO);
   Future<void> decreaseProductQuantity(CartVO cartVO);
+  ///whist list
+  Future<void> addToFavourites(ProductVO product);
+  Future<void> removeFromWhistList(String productId);
+  Stream<List<ProductVO>?> fetchWhistList();
+  Future<bool> isFavourite(String productId);
+
 }

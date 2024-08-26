@@ -33,6 +33,16 @@ class ProductModelImpl extends ProductModels{
 
   @override
   Future<void> increaseQuantity(CartVO cartVO) =>_productDataAgent.increaseProductQuantity(cartVO);
+  /// add to whist lists
+  @override
+  Future<void> addToWhistList(ProductVO productVO)=>_productDataAgent.addToFavourites(productVO);
 
+  @override
+  Stream<List<ProductVO>?> fetchWhistList() =>_productDataAgent.fetchWhistList();
+  @override
+  Future<bool> isFavourite(String productId) =>_productDataAgent.isFavourite(productId);
+
+  @override
+  Future<void> removeFromWhistList(String productId) =>_productDataAgent.removeFromWhistList(productId);
 
 }
